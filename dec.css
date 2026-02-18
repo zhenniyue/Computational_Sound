@@ -1,0 +1,152 @@
+:root {
+    --bg: #0b0b0d;
+    --panel: #17171c;
+    --text: #eaeaf0;
+    --muted: #b9b9c7;
+    --border: rgba(255,255,255,0.12);
+  
+    --whiteW: 44px;
+    --whiteH: 220px;
+    --blackW: 28px;
+    --blackH: 140px;
+    --radius: 14px;
+  }
+  
+  * { box-sizing: border-box; }
+  body {
+    margin: 18px;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color: var(--text);
+    background: var(--bg);
+  }
+  
+  h1 { margin: 0 0 14px; font-size: 24px; font-weight: 800; letter-spacing: 0.2px; }
+  
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  
+  .group {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+    min-width: 260px;
+  }
+  
+  .group h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  
+  label { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
+  label.wide { width: 100%; justify-content: space-between; gap: 10px; }
+  select, button, input[type="range"] {
+    accent-color: #7aa7ff;
+  }
+  button {
+    background: #2b2b33;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  button:hover { background: #343440; }
+  button:active { transform: translateY(1px); }
+  
+  input[type="range"] { width: 180px; }
+  span { color: var(--muted); }
+  
+  .status {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .hint { margin-top: 8px; color: var(--muted); line-height: 1.4; }
+  
+  #pianoWrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    overflow: hidden; /* 不要滚动条 */
+  }
+  
+  #piano {
+    position: relative;
+    width: calc(var(--whiteW) * 14); /* 2 octaves = 14 white keys */
+    height: var(--whiteH);
+    margin: 0 auto;
+    user-select: none;
+    touch-action: manipulation;
+    transform-origin: top center;
+  }
+  
+  /* 自适应缩放：屏幕窄时整体缩小，保证“一整页显示” */
+  @media (max-width: 900px) {
+    #piano { transform: scale(0.9); }
+  }
+  @media (max-width: 780px) {
+    #piano { transform: scale(0.8); }
+  }
+  @media (max-width: 680px) {
+    #piano { transform: scale(0.72); }
+  }
+  
+  .key {
+    position: absolute;
+    border-radius: 0 0 10px 10px;
+    display: grid;
+    place-items: end center;
+    padding-bottom: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+  }
+  
+  .key.white {
+    width: var(--whiteW);
+    height: var(--whiteH);
+    background: #f7f7fb;
+    border: 1px solid rgba(0,0,0,0.25);
+    color: #1a1a1a;
+    z-index: 1;
+  }
+  
+  .key.black {
+    width: var(--blackW);
+    height: var(--blackH);
+    background: #0f0f12;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: #f1f1ff;
+    z-index: 2;
+    transform: translateX(-50%);
+    border-radius: 0 0 10px 10px;
+  }
+  
+  .key .sub {
+    display: block;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  
+  .key.active.white { background: #dbe7ff; }
+  .key.active.black { background: #2b3a5a; }
+  
+  .smallNote { font-size: 12px; color: var(--muted); }
+  

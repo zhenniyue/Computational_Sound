@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lab 2</title>
+
+  <link rel="stylesheet" href="dec.css" />
+</head>
+
+<body>
+  <h1>Lab 2</h1>
+
+  <div class="panel">
+    <button id="start">Start Audio</button>
+
+    <label>
+      Mode:
+      <select id="mode">
+        <option value="additive">Additive</option>
+        <option value="am">AM</option>
+        <option value="fm">FM</option>
+      </select>
+    </label>
+
+    <label>
+      Waveform:
+      <select id="wave">
+        <option value="sine">sine</option>
+        <option value="triangle">triangle</option>
+        <option value="sawtooth">sawtooth</option>
+        <option value="square">square</option>
+      </select>
+    </label>
+
+    <label class="wide">
+      Master Volume:
+      <input id="masterVol" type="range" min="0" max="1" step="0.01" value="0.25" />
+      <span id="masterVolVal">0.25</span>
+    </label>
+  </div>
+
+  <div class="panel">
+    <div class="group" id="additiveControls">
+      <h3>Additive Controls</h3>
+      <label class="wide">
+        Partials (≥3):
+        <input id="partials" type="range" min="3" max="10" step="1" value="5" />
+        <span id="partialsVal">5</span>
+      </label>
+    </div>
+
+    <div class="group" id="amControls">
+      <h3>AM Controls</h3>
+      <label class="wide">
+        AM Mod Frequency (Hz):
+        <input id="amFreq" type="range" min="0.5" max="80" step="0.5" value="6" />
+        <span id="amFreqVal">6</span>
+      </label>
+      <label class="wide">
+        AM Depth:
+        <input id="amDepth" type="range" min="0" max="1" step="0.01" value="0.6" />
+        <span id="amDepthVal">0.60</span>
+      </label>
+    </div>
+
+    <div class="group" id="fmControls">
+      <h3>FM Controls</h3>
+      <label class="wide">
+        FM Mod Frequency (Hz):
+        <input id="fmFreq" type="range" min="0.5" max="800" step="0.5" value="220" />
+        <span id="fmFreqVal">220</span>
+      </label>
+      <label class="wide">
+        FM Depth (Hz):
+        <input id="fmDepth" type="range" min="0" max="800" step="1" value="120" />
+        <span id="fmDepthVal">120</span>
+      </label>
+    </div>
+
+    <div class="group">
+      <h3>ADSR (shared envelope)</h3>
+      <label class="wide">
+        Attack (s):
+        <input id="attack" type="range" min="0.001" max="1.0" step="0.001" value="0.02" />
+        <span id="attackVal">0.020</span>
+      </label>
+      <label class="wide">
+        Decay (s):
+        <input id="decay" type="range" min="0.001" max="1.5" step="0.001" value="0.12" />
+        <span id="decayVal">0.120</span>
+      </label>
+      <label class="wide">
+        Sustain (0~1):
+        <input id="sustain" type="range" min="0" max="1" step="0.01" value="0.65" />
+        <span id="sustainVal">0.65</span>
+      </label>
+      <label class="wide">
+        Release (s):
+        <input id="release" type="range" min="0.005" max="2.0" step="0.005" value="0.25" />
+        <span id="releaseVal">0.250</span>
+      </label>
+    </div>
+
+    <div class="group">
+      <h3>LFO (vibrato) – required 1pt</h3>
+      <label>
+        <input id="lfoOn" type="checkbox" checked />
+        Enable LFO
+      </label>
+      <label class="wide">
+        LFO Rate (Hz):
+        <input id="lfoRate" type="range" min="0.1" max="12" step="0.1" value="5" />
+        <span id="lfoRateVal">5.0</span>
+      </label>
+      <label class="wide">
+        LFO Depth (cents):
+        <input id="lfoDepth" type="range" min="0" max="80" step="1" value="18" />
+        <span id="lfoDepthVal">18</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="status">
+    <div><b>Audio:</b> <span id="audioStatus">stopped</span></div>
+    <div><b>Pressed keys:</b> <span id="pressed">(none)</span></div>
+    <div class="hint">
+      Click <b>Start Audio</b> first, then play:
+      <b>Z S X D C V G B H N J M</b> + <b>Q 2 W 3 E R 5 T 6 Y 7 U</b> (two octaves)
+    </div>
+  </div>
+
+  <div id="pianoWrap">
+    <div id="piano" aria-label="Piano keyboard"></div>
+  </div>
+
+  <script src="lab2.js" defer></script>
+</body>
+</html>
