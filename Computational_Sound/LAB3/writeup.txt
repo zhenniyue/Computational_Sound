@@ -1,0 +1,31 @@
+Lab 3 Write-up: From Creaking Door to Alien Chatter
+The Goal & The "Happy Accident"
+My initial goal for this assignment was to synthesize the sound of a heavy, creaking wooden door opening. Drawing inspiration from physical modeling, my plan was to use two detuned oscillators to simulate the rough, stick-slip friction of rusty hinges, and filter them to mimic the wooden resonance.
+
+However, during the process, I experienced a fascinating "happy accident." To simulate the unpredictable, irregular stuttering of the door hinge, I introduced a JavaScript setInterval function to randomly shift the frequencies of my bandpass filters every 90 milliseconds. Surprisingly, the sound immediately transformed from a creaking door into something completely different: the rapid, distinct chatter of an alien creature or a sci-fi droid! Recognizing the creative potential, I pivoted my design to fully embrace and refine this alien voice.
+
+Technical Approach & Synthesis Design
+To achieve this sound, I utilized a combination of Subtractive Synthesis and Formant Synthesis (vocal tract modeling). Here is a breakdown of how the different modules work together to create the voice:
+
+The "Vocal Cords" (Source): I used two oscillators (osc1 as a Sawtooth, osc2 as a Triangle) playing simultaneously. Their frequencies glide downwards exponentially from around 80Hz down to 12Hz. This low, raspy pitch drop perfectly mimics the natural intonation and "grunt" of a biological throat speaking a sentence and trailing off at the end.
+
+The "Vocal Tract & Mouth" (Resonance): Instead of one filter, I routed the oscillators into two parallel BiquadFilterNodes set to bandpass. In acoustic phonetics, human vowels are created by resonant peaks in the vocal tract known as formants. By setting one bandpass filter around 1500Hz and another parallel one around 900Hz, I accidentally synthesized a rudimentary set of formants, giving the raw oscillators a distinct "vowel-like" body. I also added a lowpass filter at 2200Hz to soften the harsh digital top-end.
+
+The "Articulation" (The Secret Sauce): The defining characteristic of the "chatter" comes from the setInterval block. Every 90ms, it assigns random new frequency targets to both bandpass filters using setTargetAtTime(). By randomly and rapidly shifting these formants, it tricks the brain into hearing fast, complex mouth, lip, and tongue movements (articulation), resulting in a chaotic yet articulate alien language.
+
+The Envelope: A GainNode is used to create a smooth amplitude envelope, fading the chatter in and out naturally over 2.8 seconds so it sounds like a self-contained phrase.
+
+Audio Signal Flow Graph
+Here is the routing graph of how the audio nodes are connected in my code:
+
+[Osc 1: Sawtooth] ------+
+                        |
+[Osc 2: Triangle] ------+------> [Bandpass Filter 1 (High Formant: ~1500Hz)] ---> [Lowpass: 2200Hz] ---+
+                        |                                                                              |
+                        +------> [Bandpass Filter 2 (Low Formant: ~900Hz)] -----> [Gain: 0.35] --------+
+                                                                                                       |
+                                                                                                       V
+                                                                                            [Master Gain (Envelope)]
+                                                                                                       |
+                                                                                                       V
+                                                                                           [AudioCtx.Destination]·

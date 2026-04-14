@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Lab 3 - SuperCollider Babbling Brook</title>
+</head>
+<body>
+  <h2>Lab 3 - Babbling Brook (work with Natalie Kim)</h2>
+  <button onclick="startSound()">Start Sound</button>
+  <button onclick="stopSound()">Stop Sound</button>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let activeNodes = [];
+
+    function remember(node) {
+      activeNodes.push(node);
+      return node;
+    }
+
+    function createBrownNoiseBuffer(seconds = 10) {
+      const bufferSize = Math.floor(seconds * audioCtx.sampleRate);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      let lastOut = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const brown = Math.random() * 2 - 1;
+        data[i] = (lastOut + 0.02 * brown) / 1.02;
+        lastOut = data[i];
+        data[i] *= 3.5;
+      }
+      return buffer;
+    }
+
+    function createBrownNoiseSource(buffer) {
+      const src = audioCtx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      return src;
+    }
+
+    function startSound() {
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      stopSound(); 
+
+      const brownBuffer = createBrownNoiseBuffer(10);
+
+      const audioNoise = remember(createBrownNoiseSource(brownBuffer));
+      
+      const audioLPF = remember(audioCtx.createBiquadFilter());
+      audioLPF.type = "lowpass";
+      audioLPF.frequency.value = 400;
+      
+      audioNoise.connect(audioLPF);
+
+      const modNoise = remember(createBrownNoiseSource(brownBuffer));
+      
+      const modLPF = remember(audioCtx.createBiquadFilter());
+      modLPF.type = "lowpass";
+      modLPF.frequency.value = 20;
+
+      const modGain = remember(audioCtx.createGain());
+      modGain.gain.value = 700; 
+
+      modNoise.connect(modLPF);
+      modLPF.connect(modGain);
+
+      const rhpf = remember(audioCtx.createBiquadFilter());
+      rhpf.type = "highpass";
+      rhpf.frequency.value = 500; 
+      rhpf.Q.value = 60;    
+
+      const masterGain = remember(audioCtx.createGain());
+      masterGain.gain.value = 0.1; 
+
+      audioLPF.connect(rhpf); 
+      modGain.connect(rhpf.frequency); 
+      
+      rhpf.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+
+      audioNoise.start();
+      modNoise.start();
+    }
+
+    function stopSound() {
+      for (const node of activeNodes) {
+        try { if (node.stop) node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      }
+      activeNodes = [];
+    }
+  </script>
+</body>
+</html>

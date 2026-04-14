@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Lab 3 - "Creaking Door-->Alien Chatter" V3</title>
+</head>
+<body>
+  <h2>Creaking Door-->Alien Chatter</h2>
+  <button onclick="playDoorCreak()">Alien Chatter</button>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playDoorCreak() {
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+      const duration = 2.8;
+
+      // friction source 1
+      const osc1 = audioCtx.createOscillator();
+      osc1.type = "sawtooth";
+
+      // friction source 2
+      const osc2 = audioCtx.createOscillator();
+      osc2.type = "triangle";
+
+      // make the motion feel more like dragging than bouncing
+      osc1.frequency.setValueAtTime(85, now);
+      osc1.frequency.exponentialRampToValueAtTime(40, now + duration * 0.65);
+      osc1.frequency.linearRampToValueAtTime(14, now + duration);
+
+      osc2.frequency.setValueAtTime(78, now);
+      osc2.frequency.exponentialRampToValueAtTime(35, now + duration * 0.65);
+      osc2.frequency.linearRampToValueAtTime(12, now + duration);
+
+      // resonance of the door / hinge
+      const doorResonance = audioCtx.createBiquadFilter();
+      doorResonance.type = "bandpass";
+      doorResonance.frequency.value = 1500;
+      doorResonance.Q.value = 9;
+
+      // soften the harsh top end
+      const lowpass = audioCtx.createBiquadFilter();
+      lowpass.type = "lowpass";
+      lowpass.frequency.value = 2200;
+
+      // add a second resonance to give more "creak" body
+      const bodyResonance = audioCtx.createBiquadFilter();
+      bodyResonance.type = "bandpass";
+      bodyResonance.frequency.value = 900;
+      bodyResonance.Q.value = 4;
+
+      const bodyGain = audioCtx.createGain();
+      bodyGain.gain.value = 0.35;
+
+      // main amplitude envelope
+      const masterGain = audioCtx.createGain();
+      masterGain.gain.setValueAtTime(0.0001, now);
+      masterGain.gain.linearRampToValueAtTime(0.65, now + 0.12);
+      masterGain.gain.setValueAtTime(0.65, now + duration - 0.5);
+      masterGain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+      // main route
+      osc1.connect(doorResonance);
+      osc2.connect(doorResonance);
+
+      doorResonance.connect(lowpass);
+      lowpass.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+
+      // parallel body route
+      osc1.connect(bodyResonance);
+      osc2.connect(bodyResonance);
+      bodyResonance.connect(bodyGain);
+      bodyGain.connect(masterGain);
+
+      // slight irregular movement in the resonance
+      let count = 0;
+      const interval = setInterval(() => {
+        const t = audioCtx.currentTime;
+
+        // sharper upper creak movement
+        const f1 = 1200 + Math.random() * 700;
+        doorResonance.frequency.setTargetAtTime(f1, t, 0.03);
+
+        // lower body movement
+        const f2 = 700 + Math.random() * 350;
+        bodyResonance.frequency.setTargetAtTime(f2, t, 0.05);
+
+        count++;
+        if (count > 28) {
+          clearInterval(interval);
+        }
+      }, 90);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + duration);
+      osc2.stop(now + duration);
+    }
+  </script>
+</body>
+</html>
