@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 5 - Markov Melody Generator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(130, 90, 255, 0.18), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(70, 140, 255, 0.15), transparent 35%),
+        linear-gradient(180deg, #0a0a12, #10101b 60%, #0b0b14);
+      color: #f4f4fb;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app {
+      width: min(1120px, 100%);
+      background: rgba(18, 18, 28, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(12px);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: #b8bdd6;
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 22px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .panel h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 16px;
+    }
+
+    .button-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .button-row.three-buttons {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    .generate-btn {
+      background: linear-gradient(135deg, #7e57ff, #4f8dff);
+    }
+
+    .play-btn {
+      background: linear-gradient(135deg, #00b894, #00d2a3);
+    }
+
+    .seed-btn {
+      background: linear-gradient(135deg, #f39c12, #f1c40f);
+    }
+
+    .stop-btn {
+      background: linear-gradient(135deg, #ff6b6b, #ff8b5c);
+      grid-column: span 3;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .control-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .value {
+      color: #99a1c8;
+      font-size: 13px;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .status {
+      margin-top: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(126, 87, 255, 0.08);
+      color: #ddd2ff;
+      font-size: 14px;
+      line-height: 1.45;
+      min-height: 48px;
+    }
+
+    .right-col {
+      display: grid;
+      gap: 20px;
+    }
+
+    .sequence-block {
+      display: grid;
+      gap: 14px;
+    }
+
+    .label {
+      font-size: 13px;
+      color: #aeb4d2;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .sequence-text {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 58px;
+      line-height: 1.7;
+      word-break: break-word;
+      color: #f7f7ff;
+    }
+
+    .grid-section {
+      display: grid;
+      gap: 16px;
+    }
+
+    .track-row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .track-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #cfd3e9;
+      padding-top: 10px;
+    }
+
+    .cells {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 46px;
+    }
+
+    .cell {
+      min-width: 48px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #ececff;
+      transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .cell.rest {
+      color: #8f95b3;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .cell.active {
+      background: linear-gradient(135deg, rgba(126, 87, 255, 0.92), rgba(79, 141, 255, 0.92));
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(79, 141, 255, 0.28);
+    }
+
+    .lead-note {
+      min-width: 58px;
+    }
+
+    .footnote {
+      color: #99a1c8;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .button-row.three-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .stop-btn {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Markov Melody Generator</h1>
+    <p class="subtitle">
+      A probabilistic melody machine built from a fragile seed motif. The lead melody is generated by an adjustable n-th order Markov chain, while bass and texture remain fixed.
+    </p>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>Controls</h2>
+        <div class="controls">
+          <div class="button-row three-buttons">
+            <button class="generate-btn" id="generateBtn">Generate</button>
+            <button class="play-btn" id="playBtn">Play Generated</button>
+            <button class="seed-btn" id="playSeedBtn">Play Seed</button>
+            <button class="stop-btn" id="stopBtn">Stop</button>
+          </div>
+
+          <div class="control-group">
+            <div class="control-top">
+              <label for="orderSlider">Markov Order</label>
+              <span class="value" id="orderValue">1</span>
+            </div>
+            <input type="range" id="orderSlider" min="1" max="3" step="1" value="1">
+          </div>
+
+          <div class="control-group">
+            <div class="control-top">
+              <label for="lengthSlider">Melody Length</label>
+              <span class="value" id="lengthValue">16</span>
+            </div>
+            <input type="range" id="lengthSlider" min="8" max="32" step="1" value="16">
+          </div>
+
+          <div class="control-group">
+            <div class="control-top">
+              <label for="tempoSlider">Tempo / Step Duration</label>
+              <span class="value" id="tempoValue">0.38s</span>
+            </div>
+            <input type="range" id="tempoSlider" min="0.15" max="0.8" step="0.01" value="0.38">
+          </div>
+
+          <div class="control-group">
+            <div class="control-top">
+              <label for="delaySlider">Delay Time</label>
+              <span class="value" id="delayValue">0.40s</span>
+            </div>
+            <input type="range" id="delaySlider" min="0" max="0.8" step="0.01" value="0.4">
+          </div>
+
+          <div class="control-group">
+            <div class="control-top">
+              <label for="roomSlider">Reverb Amount</label>
+              <span class="value" id="roomValue">0.70</span>
+            </div>
+            <input type="range" id="roomSlider" min="0" max="1" step="0.01" value="0.7">
+          </div>
+
+          <div class="control-group">
+            <div class="control-top">
+              <label for="reverseSlider">Reverse Chance</label>
+              <span class="value" id="reverseValue">0.30</span>
+            </div>
+            <input type="range" id="reverseSlider" min="0" max="1" step="0.01" value="0.3">
+          </div>
+
+          <div class="status" id="statusBox">
+            Ready. Click <strong>Generate</strong> to create a new melody.
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="panel sequence-block">
+          <div>
+            <div class="label">Seed Melody</div>
+            <div class="sequence-text" id="seedDisplay"></div>
+          </div>
+
+          <div>
+            <div class="label">Generated Melody</div>
+            <div class="sequence-text" id="generatedDisplay"></div>
+          </div>
+
+          <div class="footnote">
+            Bass shows one fixed pattern: <strong>c1 ~ c2 ~</strong>. Texture shows one fixed pattern: <strong>cp ~ ~ sd</strong>. Lead highlights the note that is currently playing, including <strong>~</strong>.
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Playback View</h2>
+          <div class="grid-section">
+            <div class="track-row">
+              <div class="track-name">Bass</div>
+              <div class="cells" id="bassGrid"></div>
+            </div>
+
+            <div class="track-row">
+              <div class="track-name">Lead</div>
+              <div class="cells" id="leadGrid"></div>
+            </div>
+
+            <div class="track-row">
+              <div class="track-name">Texture</div>
+              <div class="cells" id="textureGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const seedString = `
+  ~ ~ g4 ~ af4 ~ g4 ~ ~ d5 ~ g2 ~ af4 ~ g6 ~ c5 ~ g4 ~ df4 ~ g6 ~ d5 ~ g7 ~ df5 ~ g4 ~ d5
+`;
+
+    const seed = seedString.trim().split(/\s+/);
+
+    const bassPattern = ["c1", "~", "c2", "~"];
+    const texturePattern = ["cp", "~", "~", "sd"];
+    const leadNoteOptions = ["~", "g2", "g4", "af4", "c5", "d5", "df4", "df5", "g6", "g7"];
+
+    let audioCtx = null;
+    let masterGain = null;
+    let isPlaying = false;
+    let activeTimers = [];
+
+    let currentLength = 16;
+    let currentLead = [];
+    let stepDuration = 0.38;
+    let order = 1;
+
+    const statusBox = document.getElementById("statusBox");
+    const seedDisplay = document.getElementById("seedDisplay");
+    const generatedDisplay = document.getElementById("generatedDisplay");
+
+    const orderSlider = document.getElementById("orderSlider");
+    const lengthSlider = document.getElementById("lengthSlider");
+    const tempoSlider = document.getElementById("tempoSlider");
+    const delaySlider = document.getElementById("delaySlider");
+    const roomSlider = document.getElementById("roomSlider");
+    const reverseSlider = document.getElementById("reverseSlider");
+
+    const orderValue = document.getElementById("orderValue");
+    const lengthValue = document.getElementById("lengthValue");
+    const tempoValue = document.getElementById("tempoValue");
+    const delayValue = document.getElementById("delayValue");
+    const roomValue = document.getElementById("roomValue");
+    const reverseValue = document.getElementById("reverseValue");
+
+    const bassGrid = document.getElementById("bassGrid");
+    const leadGrid = document.getElementById("leadGrid");
+    const textureGrid = document.getElementById("textureGrid");
+
+    function setStatus(message) {
+      statusBox.innerHTML = message;
+    }
+
+    function normalizeNote(note) {
+      const map = {
+        "af4": "ab4",
+        "df4": "db4",
+        "df5": "db5"
+      };
+      return map[note] || note;
+    }
+
+    function buildMarkovChainN(notes, orderValue) {
+      const chain = {};
+
+      for (let i = 0; i < notes.length - orderValue; i++) {
+        const key = notes.slice(i, i + orderValue).join("|");
+        const next = notes[i + orderValue];
+
+        if (!chain[key]) {
+          chain[key] = [];
+        }
+
+        chain[key].push(next);
+      }
+
+      return chain;
+    }
+
+    function generateMelodyN(chain, notes, orderValue, length) {
+      let current = notes.slice(0, orderValue);
+      const result = [...current];
+
+      for (let i = orderValue; i < length; i++) {
+        const key = current.join("|");
+        const choices = chain[key];
+
+        if (!choices || choices.length === 0) {
+          break;
+        }
+
+        const next = choices[Math.floor(Math.random() * choices.length)];
+        result.push(next);
+
+        current.shift();
+        current.push(next);
+      }
+
+      return result;
+    }
+
+    function maybeReverse(sequence, chance = 0.3) {
+      if (Math.random() < chance) {
+        setStatus("Generated a new melody. Reverse transformation was applied.");
+        return [...sequence].reverse();
+      }
+      return sequence;
+    }
+
+    function regenerateMelody() {
+      const safeOrder = Math.min(order, Math.max(1, seed.length - 1));
+      const chain = buildMarkovChainN(seed, safeOrder);
+
+      currentLead = maybeReverse(
+        generateMelodyN(chain, seed, safeOrder, currentLength),
+        parseFloat(reverseSlider.value)
+      );
+
+      renderGenerated();
+    }
+
+    seedDisplay.textContent = seed.join(" ");
+    regenerateMelody();
+    renderAllGrids();
+
+    orderSlider.addEventListener("input", () => {
+      order = parseInt(orderSlider.value, 10);
+      orderValue.textContent = order;
+    });
+
+    lengthSlider.addEventListener("input", () => {
+      currentLength = parseInt(lengthSlider.value, 10);
+      lengthValue.textContent = currentLength;
+    });
+
+    tempoSlider.addEventListener("input", () => {
+      stepDuration = parseFloat(tempoSlider.value);
+      tempoValue.textContent = stepDuration.toFixed(2) + "s";
+    });
+
+    delaySlider.addEventListener("input", () => {
+      delayValue.textContent = Number(delaySlider.value).toFixed(2) + "s";
+    });
+
+    roomSlider.addEventListener("input", () => {
+      roomValue.textContent = Number(roomSlider.value).toFixed(2);
+    });
+
+    reverseSlider.addEventListener("input", () => {
+      reverseValue.textContent = Number(reverseSlider.value).toFixed(2);
+    });
+
+    document.getElementById("generateBtn").addEventListener("click", () => {
+      regenerateMelody();
+      if (!statusBox.textContent.includes("Reverse")) {
+        setStatus(`Generated a new melody with order ${order}.`);
+      }
+    });
+
+    document.getElementById("playBtn").addEventListener("click", async () => {
+      await startAudioIfNeeded();
+      if (isPlaying) {
+        stopPlayback();
+      }
+      playSequence(currentLead, "generated");
+    });
+
+    document.getElementById("playSeedBtn").addEventListener("click", async () => {
+      await startAudioIfNeeded();
+      if (isPlaying) {
+        stopPlayback();
+      }
+      playSequence(seed, "seed");
+    });
+
+    document.getElementById("stopBtn").addEventListener("click", () => {
+      stopPlayback();
+      setStatus("Stopped.");
+    });
+
+    function renderGenerated() {
+      generatedDisplay.textContent = currentLead.join(" ");
+    }
+
+    function renderSinglePatternTrack(gridElement, sequence, trackName) {
+      gridElement.innerHTML = "";
+
+      sequence.forEach((item, index) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        if (item === "~") cell.classList.add("rest");
+        cell.textContent = item;
+        cell.dataset.index = index;
+        cell.dataset.track = trackName;
+        gridElement.appendChild(cell);
+      });
+    }
+
+    function renderLeadOptions() {
+      leadGrid.innerHTML = "";
+
+      leadNoteOptions.forEach(note => {
+        const cell = document.createElement("div");
+        cell.className = "cell lead-note";
+        if (note === "~") cell.classList.add("rest");
+        cell.textContent = note;
+        cell.dataset.note = note;
+        cell.dataset.track = "lead";
+        leadGrid.appendChild(cell);
+      });
+    }
+
+    function renderAllGrids() {
+      renderSinglePatternTrack(bassGrid, bassPattern, "bass");
+      renderLeadOptions();
+      renderSinglePatternTrack(textureGrid, texturePattern, "texture");
+    }
+
+    function clearHighlights() {
+      document.querySelectorAll(".cell.active").forEach(cell => {
+        cell.classList.remove("active");
+      });
+    }
+
+    function highlightPatternStep(trackName, patternLength, stepIndex) {
+      const localIndex = stepIndex % patternLength;
+      document.querySelectorAll(`.cell[data-track="${trackName}"][data-index="${localIndex}"]`).forEach(cell => {
+        cell.classList.add("active");
+      });
+    }
+
+    function highlightLeadNote(note) {
+      if (!note) return;
+
+      document.querySelectorAll(`.cell[data-track="lead"][data-note="${note}"]`).forEach(cell => {
+        cell.classList.add("active");
+      });
+    }
+
+    function highlightStep(stepIndex, currentLeadNote) {
+      clearHighlights();
+      highlightPatternStep("bass", bassPattern.length, stepIndex);
+      highlightPatternStep("texture", texturePattern.length, stepIndex);
+      highlightLeadNote(currentLeadNote);
+    }
+
+    async function startAudioIfNeeded() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.9;
+        masterGain.connect(audioCtx.destination);
+      }
+
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      activeTimers.forEach(timer => clearTimeout(timer));
+      activeTimers = [];
+      clearHighlights();
+    }
+
+    function noteToFrequency(note) {
+      if (note === "~") return null;
+
+      const noteMap = {
+        "c1": 24,
+        "c2": 36,
+        "g2": 43,
+        "g4": 67,
+        "ab4": 68,
+        "db4": 61,
+        "c5": 72,
+        "db5": 73,
+        "d5": 74,
+        "g6": 91,
+        "g7": 103
+      };
+
+      const normalized = normalizeNote(note.toLowerCase());
+      const midi = noteMap[normalized];
+      if (midi == null) return null;
+
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function createImpulseResponse(duration = 1.8, decay = 2.3) {
+      const sampleRate = audioCtx.sampleRate;
+      const length = sampleRate * duration;
+      const impulse = audioCtx.createBuffer(2, length, sampleRate);
+
+      for (let channel = 0; channel < 2; channel++) {
+        const data = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        }
+      }
+
+      return impulse;
+    }
+
+    function playBassStep(note, time, duration) {
+      const freq = noteToFrequency(note);
+      if (!freq) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(freq, time);
+
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(500, time);
+      filter.Q.value = 2;
+
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.linearRampToValueAtTime(0.22, time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start(time);
+      osc.stop(time + duration + 0.02);
+    }
+
+    function playLeadStep(note, time, duration) {
+      const freq = noteToFrequency(note);
+      if (!freq) return;
+
+      const delayAmount = parseFloat(delaySlider.value);
+      const roomAmount = parseFloat(roomSlider.value);
+
+      const osc = audioCtx.createOscillator();
+      const toneGain = audioCtx.createGain();
+      const dryGain = audioCtx.createGain();
+      const wetGain = audioCtx.createGain();
+      const delay = audioCtx.createDelay(1.0);
+      const convolver = audioCtx.createConvolver();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, time);
+
+      toneGain.gain.setValueAtTime(0.0001, time);
+      toneGain.gain.linearRampToValueAtTime(0.2, time + 0.015);
+      toneGain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+      dryGain.gain.value = 1 - Math.min(roomAmount * 0.35, 0.35);
+      wetGain.gain.value = roomAmount * 0.7;
+
+      delay.delayTime.value = delayAmount;
+      convolver.buffer = createImpulseResponse();
+
+      osc.connect(toneGain);
+
+      toneGain.connect(dryGain);
+      dryGain.connect(masterGain);
+
+      toneGain.connect(delay);
+      delay.connect(convolver);
+      convolver.connect(wetGain);
+      wetGain.connect(masterGain);
+
+      osc.start(time);
+      osc.stop(time + duration + delayAmount + 0.2);
+    }
+
+    function playCpStep(time, duration) {
+      const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+
+      const source = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+
+      source.buffer = buffer;
+      filter.type = "highpass";
+      filter.frequency.value = 5000;
+
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.linearRampToValueAtTime(0.06, time + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      source.start(time);
+      source.stop(time + duration + 0.02);
+    }
+
+    function playSdStep(time, duration) {
+      const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.5);
+      }
+
+      const source = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+
+      source.buffer = buffer;
+      filter.type = "bandpass";
+      filter.frequency.value = 1800;
+      filter.Q.value = 0.8;
+
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.linearRampToValueAtTime(0.12, time + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      source.start(time);
+      source.stop(time + duration + 0.02);
+    }
+
+    function playTextureStep(symbol, time, duration) {
+      if (symbol === "cp") {
+        playCpStep(time, duration);
+      } else if (symbol === "sd") {
+        playSdStep(time, duration);
+      }
+    }
+
+    function playSequence(sequence, mode = "generated") {
+      const startTime = audioCtx.currentTime + 0.08;
+
+      isPlaying = true;
+      setStatus(mode === "seed" ? "Playing seed melody..." : `Playing melody with order ${order}...`);
+
+      sequence.forEach((note, index) => {
+        const time = startTime + index * stepDuration;
+        const bassNote = bassPattern[index % bassPattern.length];
+        const textureNote = texturePattern[index % texturePattern.length];
+
+        const timer = setTimeout(() => {
+          if (isPlaying) {
+            highlightStep(index, note);
+          }
+        }, Math.max(0, (time - audioCtx.currentTime) * 1000));
+
+        activeTimers.push(timer);
+
+        playBassStep(bassNote, time, stepDuration * 0.9);
+        playLeadStep(note, time, stepDuration * 0.78);
+        playTextureStep(textureNote, time, Math.max(0.08, stepDuration * 0.3));
+      });
+
+      const finishTimer = setTimeout(() => {
+        isPlaying = false;
+        clearHighlights();
+        setStatus(mode === "seed" ? "Seed playback finished." : "Playback finished.");
+      }, sequence.length * stepDuration * 1000 + 200);
+
+      activeTimers.push(finishTimer);
+    }
+  </script>
+</body>
+</html>

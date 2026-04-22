@@ -28,4 +28,4 @@ Here is the routing graph of how the audio nodes are connected in my code:
                                                                                             [Master Gain (Envelope)]
                                                                                                        |
                                                                                                        V
-                                                                                           [AudioCtx.Destination]
+                                                                                           [AudioCtx.Destination]·

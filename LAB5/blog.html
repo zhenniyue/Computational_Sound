@@ -1,0 +1,24 @@
+
+<p>
+What happens when you teach a machine to remember — or forget — on purpose? In this project, I implemented an n-th order Markov chain to generate melodies from a seed sequence. Unlike a first-order model, higher-order Markov chains take into account multiple previous notes, which allows the generated melody to preserve more local structure.
+</p>
+    
+<p>
+One key insight I gained is that the order of the Markov chain significantly affects the output. Lower-order models produce more random sequences, while higher-order models generate melodies that closely resemble the original seed. This creates a trade-off between randomness and musical coherence. At order 3, the model essentially memorizes the seed — there is almost no variation left.
+</p>
+    
+<p>
+Another important observation is that the model cannot generate patterns that do not appear in the training data. For example, when the seed melody did not contain consecutive rests (~), the model never produced them. After modifying the seed to include "~~", the generated melodies began to include longer pauses, which added a sense of tension and unpredictability. At order 1, consecutive rests can even chain indefinitely — every time the model lands on ~, there is a small chance it selects ~ again.
+</p>
+    
+<p>
+I also explored the role of rests (~) as a musical element. By increasing the frequency of rests in the seed, the generated melody feels more fragmented and expressive, almost like hesitation or anxiety. This shows how even simple symbolic changes to the input data can have a strong perceptual impact on the output.
+</p>
+    
+<p>
+On the audio side, the interface uses WebAudio's oscillator and convolver nodes to synthesize three layers in real time: a sawtooth bass, a triangle-wave lead with delay and reverb, and a noise-based texture track. Adjusting the reverb amount and delay time while a melody plays made it immediately clear how much the acoustic environment shapes the perceived emotion of an algorithmically generated sequence — the same notes can feel cold and distant or warm and immersive depending on the effect settings.
+</p>
+    
+<p>
+Finally, I built an interactive interface that allows users to adjust parameters such as Markov order, melody length, tempo, and audio effects in real time. Experimenting with these parameters helped me better understand the relationship between probability and musical structure — and how a simple chain of conditional probabilities can produce something that genuinely feels like music.
+</p>
